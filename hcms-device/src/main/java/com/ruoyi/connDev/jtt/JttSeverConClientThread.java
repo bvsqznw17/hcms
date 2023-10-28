@@ -13,8 +13,12 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.alibaba.fastjson2.JSONObject;
 import com.ruoyi.common.constant.JTcpFunc;
+import com.ruoyi.common.core.redis.RedisCache;
 import com.ruoyi.common.utils.sign.Md5Utils;
 import com.ruoyi.common.utils.spring.SpringUtils;
 import com.ruoyi.common.utils.uuid.UUID;
@@ -24,6 +28,7 @@ import com.ruoyi.device.service.IDevMsgService;
 import com.ruoyi.device.service.IupgradeService;
 
 public class JttSeverConClientThread extends Thread {
+
     // private String host = "localhost";// 默认连接到本机
     // private int port = 5020;// 默认连接到端口5020
     private String random = ""; // 服务端发来的随机字符串
@@ -62,25 +67,17 @@ public class JttSeverConClientThread extends Thread {
         this.myRandom = myRandom;
     }
 
-    public String getKey() {
-        return key;
-    }
-
     public void setFile(File file) {
         this.tranFile = file;
     }
 
-    public String getUuid(){
+    public String getUuid() {
         return this.uuid;
-      }
-    
-    public void setUuid(String uuid){
-        this.uuid = uuid;
     }
 
     @Override
     public void run() {
-        DevMsg devMsg = new DevMsg();
+
         try {
             System.out.println("jtt-sc: 新的设备接入");
             OutputStream os = socket.getOutputStream();
@@ -138,58 +135,9 @@ public class JttSeverConClientThread extends Thread {
                     // 获取设备名称并存储起来
                     String z_content = json.getString("z_content");
                     JSONObject jObj = JSONObject.parseObject(z_content);
-                    String devName = jObj.getString("name");
-                    // 假如devName是空字符串，则使用ip作为名称
-                    if (devName == null || devName.equals("")) {
-                        devName = ip;
-                    }
-                    JttSocketManage.getShadow().put(ip, devName);
-                    JttSocketManage.getShadow().put(devName, ip);
-                    JttSocketManage.addServerConClientThread(devName, JttSocketManage.getServerConClientThread(ip));
-                    String devModel = jObj.getString("type");
-                    String uuid = jObj.getString("uuid"); // TODO 用作后续比对
-                    String cpusn = jObj.getString("cpusn");
-                    System.out.println(devName);
-                    devMsg.setDevName(devName);
-                    devMsg.setDevCpusn(cpusn);
-                    // 根据名称查询是否有这台机器, 假如有，删除原先的记录再插入
-                    IDevMsgService devMsgService = SpringUtils.getBean(IDevMsgService.class);
-                    List<DevMsg> dms = devMsgService.selectDevMsgList(devMsg);
-                    if (dms.size() > 0) {
-                        devMsgService.deleteDevMsgById(dms.get(0).getId());
-                    }
-                    devMsg.setDevModel(devModel);
-                    devMsg.setUuid(uuid);
-                    devMsg.setIp(socket.getInetAddress().getHostAddress());
-                    devMsg.setStatus(1);
-                    devMsg.setDtCreate(new Date());
-                    devMsg.setDtUpdate(new Date());
-                    devMsgService.insertDevMsg(devMsg);
-                    // 增加一条软件更新记录
-                    IupgradeService upgradeService = SpringUtils.getBean(IupgradeService.class);
-                    // 先删除（删除要等到后面再做，因为现在没有版本信息）
-                    // upgradeService.deleteupgradeByDevName(devName);
-                    // 后插入
-                    upgrade t_upgrade = new upgrade();
-                    t_upgrade.setDevName(devName);
-                    List<upgrade> upgrades = upgradeService.selectupgradeList(t_upgrade);
-                    if (upgrades.size() <= 0) {
-                        t_upgrade.setName("software_1");
-                        t_upgrade.setDtUpdate(new Date());
-                        upgradeService.insertupgrade(t_upgrade);
-                    }
-
+                    dealJttMsg(jObj);
                 }
             }
-
-            // 发送心跳检测
-            JSONObject jo = new JSONObject();
-            jo.put("fun", JTcpFunc.HEART_BEAT);
-            jo.put("random", random);
-            jo.put("myRandom", myRandom);
-            jo.put("z_content", new JSONObject());
-            hbt = new HeartBeatThread(socket, jo, this, devMsg);
-            hbt.start();
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -407,5 +355,82 @@ public class JttSeverConClientThread extends Thread {
         bytes[2] = (byte) (i >> 8);
         bytes[3] = (byte) i;
         return bytes;
+    }
+
+    // 处理从jtt客户端获取的信息
+    private void dealJttMsg(JSONObject jObj) {
+        String devName = jObj.getString("name");
+
+        manageSocketData(devName); // 增加设备名称与IP的绑定，确保设备唯一性
+        DevMsg devMsg = createDevMsgFromJSON(jObj, devName);
+        handleDevMsgInService(devMsg); // 更新设备信息
+        handleUpgrade(devName, jObj.getString("type"), jObj.getString("ver")); // 处理设备的升级信息
+        startHeartbeat(devMsg); // 开始心跳检测，监控设备状态
+
+        // 添加连接码到redis中
+        handleCcode(devMsg, jObj.getString("ccode"));
+    }
+
+    // 增加设备名称与IP的绑定，确保设备唯一性
+    private void manageSocketData(String devName) {
+        JttSocketManage.getShadow().put(ip, devName);
+        JttSocketManage.getShadow().put(devName, ip);
+        JttSocketManage.addServerConClientThread(devName, JttSocketManage.getServerConClientThread(ip));
+    }
+
+    // 从JSON对象创建DevMsg实例
+    private DevMsg createDevMsgFromJSON(JSONObject jObj, String devName) {
+        DevMsg devMsg = new DevMsg();
+        devMsg.setDevName(devName);
+        devMsg.setDevCpusn(jObj.getString("cpusn"));
+        devMsg.setDevModel(jObj.getString("type"));
+        devMsg.setUuid(jObj.getString("uuid"));
+        devMsg.setIp(socket.getInetAddress().getHostAddress());
+        devMsg.setStatus(1);
+        devMsg.setDtCreate(new Date());
+        devMsg.setDtUpdate(new Date());
+        return devMsg;
+    }
+
+    // 更新设备信息
+    private void handleDevMsgInService(DevMsg devMsg) {
+        IDevMsgService devMsgService = SpringUtils.getBean(IDevMsgService.class);
+        List<DevMsg> dms = devMsgService.selectDevMsgList(devMsg);
+        if (!dms.isEmpty()) {
+            devMsgService.deleteDevMsgById(dms.get(0).getId());
+        }
+        devMsgService.insertDevMsg(devMsg);
+    }
+
+    // 处理设备的升级信息
+    private void handleUpgrade(String devName, String devModel, String version) {
+        IupgradeService upgradeService = SpringUtils.getBean(IupgradeService.class);
+        upgrade t_upgrade = new upgrade();
+        t_upgrade.setDevName(devName);
+        List<upgrade> upgrades = upgradeService.selectupgradeList(t_upgrade);
+        if (upgrades.isEmpty()) {
+            t_upgrade.setDevModel(devModel);
+            t_upgrade.setDtUpdate(new Date());
+            t_upgrade.setVersion(version);
+            upgradeService.insertupgrade(t_upgrade);
+        }
+        upgradeService.deleteupgradeByDevName(devName);
+    }
+
+    // 开启心跳检测
+    private void startHeartbeat(DevMsg devMsg) {
+        JSONObject jo = new JSONObject();
+        jo.put("fun", JTcpFunc.HEART_BEAT);
+        jo.put("random", random);
+        jo.put("myRandom", myRandom);
+        jo.put("z_content", new JSONObject());
+        HeartBeatThread hbt = new HeartBeatThread(socket, jo, this, devMsg);
+        hbt.start();
+    }
+
+    // 处理连接码验证逻辑
+    private void handleCcode(DevMsg devMsg, String ccode) {
+        RedisCache redisCache = SpringUtils.getBean(RedisCache.class);
+        redisCache.setCacheObject(devMsg.getDevName() + "_ccode", ccode);
     }
 }

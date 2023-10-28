@@ -15,8 +15,7 @@ import lombok.Data;
  * @date 2022-11-01
  */
 @Data
-public class upgrade extends BaseEntity
-{
+public class upgrade extends BaseEntity {
     private static final long serialVersionUID = 1L;
 
     /**  */
@@ -30,9 +29,9 @@ public class upgrade extends BaseEntity
     @Excel(name = "设备ip")
     private String ip;
 
-    /** 软件名称 */
-    @Excel(name = "软件名称")
-    private String name;
+    /** 设备型号 */
+    @Excel(name = "设备型号")
+    private String devModel;
 
     /** 当前版本 */
     @Excel(name = "当前版本")

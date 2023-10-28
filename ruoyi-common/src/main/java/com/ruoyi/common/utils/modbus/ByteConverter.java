@@ -10,34 +10,34 @@ import com.ruoyi.common.constant.MbTranType;
 public class ByteConverter {
     // 将byte[]转换为short
     public static short bytesToShort(byte[] bytes) {
-        return ByteBuffer.wrap(bytes).order(ByteOrder.BIG_ENDIAN).getShort();
+        return ByteBuffer.wrap(bytes).getShort();
     }
 
     // 将byte[]转换为int
     public static int bytesToInt(byte[] bytes) {
-        return ByteBuffer.wrap(bytes).order(ByteOrder.BIG_ENDIAN).getInt();
+        return ByteBuffer.wrap(bytes).getInt();
     }
 
     // 将byte[]转换为long
     public static long bytesToLong(byte[] bytes) {
-        return ByteBuffer.wrap(bytes).order(ByteOrder.BIG_ENDIAN).getLong();
+        return ByteBuffer.wrap(bytes).getLong();
     }
 
     // 将byte[]转换为float
     public static float bytesToFloat(byte[] bytes) {
-        return ByteBuffer.wrap(bytes).order(ByteOrder.BIG_ENDIAN).getFloat();
+        return ByteBuffer.wrap(bytes).getFloat();
     }
 
     // 将byte[]转换为double
     public static double bytesToDouble(byte[] bytes) {
-        return ByteBuffer.wrap(bytes).order(ByteOrder.BIG_ENDIAN).getDouble();
+        return ByteBuffer.wrap(bytes).getDouble();
     }
 
     // 将byte[]数组转换为JSON数组字符串
     public static String bytesToJsonArray(byte[] bytes, String dataType) {
         JSONArray jsonArray = new JSONArray();
         int elementTypeSize = getTypeSize(dataType);
-        int numElements = bytes.length / elementTypeSize;
+        // int numElements = bytes.length / elementTypeSize;
 
         for (int i = 0; i < bytes.length; i += elementTypeSize) {
             byte[] elementBytes = Arrays.copyOfRange(bytes, i, i + elementTypeSize);
@@ -70,13 +70,15 @@ public class ByteConverter {
             case MbTranType.F64:
                 return 8;
             default:
-                throw new IllegalArgumentException("Unsupported data type: " + dataType);
+                // System.out.println("Unsupported data type: " + dataType);
+                return 1;
+            // throw new IllegalArgumentException("Unsupported data type: " + dataType);
         }
     }
 
     // 根据数据类型将byte[]转换为相应类型
     private static Object convertBytesToType(byte[] bytes, String dataType) {
-        ByteBuffer buffer = ByteBuffer.wrap(bytes).order(ByteOrder.BIG_ENDIAN);
+        ByteBuffer buffer = ByteBuffer.wrap(bytes);
         switch (dataType) {
             case MbTranType.U8:
                 return buffer.get() & 0xFF;
@@ -99,7 +101,9 @@ public class ByteConverter {
             case MbTranType.F64:
                 return buffer.getDouble();
             default:
-                throw new IllegalArgumentException("Unsupported data type: " + dataType);
+                // System.out.println("Unsupported data type: " + dataType);
+                return "-99999999";
+            // throw new IllegalArgumentException("Unsupported data type: " + dataType);
         }
     }
 

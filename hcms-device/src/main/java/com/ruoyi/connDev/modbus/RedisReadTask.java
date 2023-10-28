@@ -36,8 +36,8 @@ public class RedisReadTask implements Runnable {
             for (RegLib regLib : regLibs) {
                 // data解码-首先按照RegAddr和regNum截取data
                 byte[] src = subByteArray(data, regLib.getRegAddr() * 2, regLib.getRegNum() * 2);
-                // 如果regLib.getRegAddr() > 999, 跳过
-                if (regLib.getRegAddr() > 999) {
+                // skip rules
+                if (!isValid(regLib)) {
                     continue;
                 }
                 // 定义前缀
@@ -52,23 +52,45 @@ public class RedisReadTask implements Runnable {
                 switch (regLib.getDataType()) {
                     case MbTranType.U16:
                     case MbTranType.S16:
-                        redisCache.setCacheObject(key, ByteConverter.bytesToShort(res));
+                        short shortVal = ByteConverter.bytesToShort(res);
+                        Object shortResult = processValueWithPrecision(shortVal, prec);
+                        redisCache.setCacheObject(key, shortResult);
+                        // if (shortVal != 0) {
+                        // System.out.println(regLib.getParamKey() + ":" + shortResult);
+                        // }
                         break;
                     case MbTranType.U32:
                     case MbTranType.S32:
-                        redisCache.setCacheObject(key, ByteConverter.bytesToInt(res));
+                        int intVal = ByteConverter.bytesToInt(res);
+                        Object intResult = processValueWithPrecision(intVal, prec);
+                        redisCache.setCacheObject(key, intResult);
+                        // if (intVal != 0) {
+                        // System.out.println(regLib.getParamKey() + ":" + intResult);
+                        // }
                         break;
                     case MbTranType.U64:
                     case MbTranType.S64:
-                        redisCache.setCacheObject(key, ByteConverter.bytesToLong(res));
+                        long longVal = ByteConverter.bytesToLong(res);
+                        Object longResult = processValueWithPrecision(longVal, prec);
+                        redisCache.setCacheObject(key, longResult);
+                        // if (longVal != 0) {
+                        // System.out.println(regLib.getParamKey() + ":" + longResult);
+                        // }
                         break;
                     case MbTranType.F32:
-                        redisCache.setCacheObject(key, ByteConverter.bytesToFloat(res));
+                        Float floatVal = ByteConverter.bytesToFloat(res);
+                        Object floatResult = processValueWithPrecision(floatVal, prec);
+                        redisCache.setCacheObject(key, floatResult);
+                        break;
                     case MbTranType.F64:
-                        redisCache.setCacheObject(key, ByteConverter.bytesToDouble(res));
+                        Double doubleVal = ByteConverter.bytesToDouble(res);
+                        Object doubleResult = processValueWithPrecision(doubleVal, prec);
+                        redisCache.setCacheObject(key, doubleResult);
                         break;
                     case MbTranType.Chars:
-                        redisCache.setCacheObject(key, new String(res));
+                        // System.out.println(regLib.getParamKey() + "::::::::::" + new String(res));
+                        redisCache.setCacheObject(key, new String(res).trim());
+                        break;
                     case MbTranType.Bytes:
                         // 转为base64存储
                         String base64 = Base64.getEncoder().encodeToString(res);
@@ -76,7 +98,11 @@ public class RedisReadTask implements Runnable {
                         break;
                     default:
                         // 其余是list的情况
-                        redisCache.setCacheObject(key, ByteConverter.bytesToJsonArray(res, regLib.getDataType()));
+                        String type = checkStr(regLib.getDataType());
+                        if (regLib.getParamKey().equals("doustatus")) {
+                            System.out.println("斗状态" + ":" + new String(res));
+                        }
+                        redisCache.setCacheObject(key, ByteConverter.bytesToJsonArray(res, type));
                 }
 
                 // 处理regNum大于1的情况，这个时候通常是list
@@ -85,6 +111,19 @@ public class RedisReadTask implements Runnable {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    private Object processValueWithPrecision(Number value, int prec) {
+        if (prec == 0) {
+            return value; // 返回原始整数值
+        } else {
+            if (value instanceof Short || value instanceof Integer || value instanceof Long) {
+                return value.doubleValue() * Math.pow(10, -prec); // 返回经过处理的浮点数
+            } else if (value instanceof Float || value instanceof Double) {
+                return value.doubleValue() * Math.pow(10, -prec); // 返回经过处理的浮点数
+            }
+        }
+        return null; // 或者可以返回其他默认值
     }
 
     // 获取sysDotNum
@@ -114,6 +153,14 @@ public class RedisReadTask implements Runnable {
         return result;
     }
 
+    // 检查String中是否有'['字符，如果有，截取'['之前的字符，返回
+    public static String checkStr(String str) {
+        if (str.contains("[") && str.contains("]")) {
+            return str.substring(0, str.indexOf("["));
+        }
+        return str;
+    }
+
     public static void main(String[] args) {
         byte[] data = { 0x01, 0x02, 0x03, 0x04, 0x05 };
         int startIndex = 1; // 起始位置
@@ -125,6 +172,30 @@ public class RedisReadTask implements Runnable {
         for (byte b : subArray) {
             System.out.print(String.format("%02X ", b));
         }
+    }
+
+    // test：打印二进制数组的每一位
+    public static void printBits(byte[] byteArray) {
+        for (byte b : byteArray) {
+            for (int i = 7; i >= 0; i--) {
+                int bit = (b >> i) & 1;
+                System.out.print(bit);
+            }
+            System.out.print(" "); // 在不同的字节之间添加空格，使输出更清晰
+        }
+    }
+
+    // skip rules
+    public static boolean isValid(RegLib regLib) {
+        // 如果regLib.getRegAddr() > 999, 跳过
+        if (regLib.getRegAddr() > 999) {
+            return false;
+        }
+        // 如果regLib.getParamKey()是null或者_unused, 跳过
+        if (regLib.getParamKey() == null || regLib.getParamKey().equals("_unused")) {
+            return false;
+        }
+        return true;
     }
 
     // 处理list的情况

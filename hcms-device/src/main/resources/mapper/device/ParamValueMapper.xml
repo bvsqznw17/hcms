@@ -32,7 +32,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <select id="selectParamValueList" parameterType="ParamValue" resultMap="ParamValueResult">
         <!-- <include refid="selectParamValueVo"/> -->
         select p.*, s.page_seq, s.min_v, s.max_v, s.decimal_num, s.decimal_type, s.unit 
-        from hcms_param_value p left join hcms_reg_lib s on p.param_key = s.param_key 
+        from hcms_param_value p left join hcms_reg_lib s on p.reg_addr = s.reg_addr 
         <where>
             <if test="devName != null "> and p.dev_name = #{devName}</if>
             <if test="devModel != null "> and p.dev_model = #{devModel}</if>

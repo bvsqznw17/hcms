@@ -10,7 +10,7 @@ public class ModbusSocketManage {
 
   private static HashMap<String, ModbusServerConClientThread> hm = new HashMap<>();
 
-  private static HashMap<String, MbServerThread> hmb = new HashMap<>();
+  // private static HashMap<String, MbServerThread> hmb = new HashMap<>();
 
   public static void addServerConClientThread(String devName, ModbusServerConClientThread socket) {
     hm.put(devName, socket);
@@ -20,18 +20,19 @@ public class ModbusSocketManage {
     return hm.get(devName);
   }
 
-  public static void addMbServerThread(String devName, MbServerThread mbServerThread) {
-    hmb.put(devName, mbServerThread);
-  }
+  // public static void addMbServerThread(String devName, MbServerThread
+  // mbServerThread) {
+  // hmb.put(devName, mbServerThread);
+  // }
 
-  public static MbServerThread getMbServerThread(String devName) {
-    return hmb.get(devName);
-  }
+  // public static MbServerThread getMbServerThread(String devName) {
+  // return hmb.get(devName);
+  // }
 
   // 移除MbServerThread
-  public static void removeMbServerThread(String devName) {
-    hmb.remove(devName);
-  }
+  // public static void removeMbServerThread(String devName) {
+  // hmb.remove(devName);
+  // }
 
   // 返回在线用户
   public static String getOnLineDevs() {
@@ -63,9 +64,9 @@ public class ModbusSocketManage {
   }
 
   // 返回mb集合
-  public static HashMap<String, MbServerThread> getHmb() {
-    return hmb;
-  }
+  // public static HashMap<String, MbServerThread> getHmb() {
+  // return hmb;
+  // }
 
   // 返回entryset
   public static Set<Entry<String, ModbusServerConClientThread>> getEntry() {

@@ -2,7 +2,10 @@ package com.ruoyi.web.controller.device;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ruoyi.common.core.controller.BaseController;
@@ -50,6 +53,17 @@ public class BusinessController extends BaseController {
     @GetMapping("/readParam")
     public AjaxResult readParam(String devName, String paramKey) {
         return businessService.readParam(devName, paramKey);
+    }
+
+    /**
+     * 读取一组设备的参数
+     * 
+     * @param devName
+     * @param paramKeys
+     */
+    @PostMapping("/readParams")
+    public AjaxResult readParams(String devName, String[] paramKeys) {
+        return businessService.readParams(devName, paramKeys);
     }
 
     /**

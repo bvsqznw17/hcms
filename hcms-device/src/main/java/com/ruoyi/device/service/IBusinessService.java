@@ -16,6 +16,9 @@ public interface IBusinessService {
     // 读取设备参数
     public AjaxResult readParam(String devName, String paramKey);
 
+    // 读取一组设备的参数
+    public AjaxResult readParams(String devName, String[] paramKeys);
+
     // 获取设备的运行操作状态
     public AjaxResult getRunStatus(String devName);
 

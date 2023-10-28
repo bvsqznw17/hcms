@@ -39,10 +39,8 @@ public class MTools {
     }
 
     public static void getByte4(byte[] src, byte[] dst) {
-        short v1 = 0;
-        short v2 = 0;
-        getByte2(src, 0, dst, 0, v1);
-        getByte2(src, 2, dst, 2, v2);
+        short v1 = getByte2(src, 0);
+        short v2 = getByte2(src, 2);
         int v = ((v2 << 16) & 0xFFFF0000) | (v1 & 0xFFFF);
         dst[0] = (byte) ((v >> 24) & 0xFF);
         dst[1] = (byte) ((v >> 16) & 0xFF);
@@ -75,13 +73,6 @@ public class MTools {
         return (short) (((src[srcPos] & 0xFF) << 8) | (src[srcPos + 1] & 0xFF));
     }
 
-    private static void getByte2(byte[] src, int srcOffset, byte[] dst, int dstOffset, short v) {
-        v = (short) ((src[srcOffset] << 8) & 0xFF00);
-        v |= (short) (src[srcOffset + 1] & 0xFF);
-        dst[dstOffset] = (byte) ((v >> 8) & 0xFF);
-        dst[dstOffset + 1] = (byte) (v & 0xFF);
-    }
-
     public static byte[] decode(byte[] src, int len, String dataType) {
         byte[] data = new byte[8];
 
@@ -108,7 +99,7 @@ public class MTools {
                 data = swapBytes(src, len);
                 break;
             default:
-                data = swapBytes(src, len);
+                // data = swapBytes(src, len);
                 return data;
         }
         return data;

@@ -15,16 +15,19 @@ import lombok.Data;
  * @date 2022-11-15
  */
 @Data
-public class Version extends BaseEntity
-{
+public class Version extends BaseEntity {
     private static final long serialVersionUID = 1L;
 
     /** $column.columnComment */
     private Long id;
-    
+
     /** 软件类型 */
     @Excel(name = "软件类型")
     private String type;
+
+    /** 设备型号 */
+    @Excel(name = "设备型号")
+    private String devModel;
 
     /** 软件名称 */
     @Excel(name = "软件名称")

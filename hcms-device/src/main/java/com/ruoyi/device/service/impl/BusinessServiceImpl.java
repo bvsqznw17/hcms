@@ -27,6 +27,8 @@ import com.ruoyi.device.service.IBusinessService;
 @Service
 public class BusinessServiceImpl implements IBusinessService {
 
+    private static final String KEY_PREFIX = "mb:";
+
     // @Autowired
     // private BusinessMapper businessMapper;
     @Autowired
@@ -163,6 +165,20 @@ public class BusinessServiceImpl implements IBusinessService {
         return AjaxResult.success(map);
     }
 
+    /**
+     * 读取一组设备的参数
+     */
+    @Override
+    public AjaxResult readParams(String devName, String[] paramKeys) {
+        HashMap<String, Object> map = new HashMap<>();
+        // 从redis中获取设备的参数值
+        for (String paramKey : paramKeys) {
+            Object pv = redisCache.getCacheObject(KEY_PREFIX + paramKey);
+            map.put(paramKey, pv);
+        }
+        return AjaxResult.success(map);
+    }
+
     private List<HashMap<String, Object>> processBytes(byte[] bytes, ParamValue paramValue, List<RegLib> regLibs) {
         List<HashMap<String, Object>> res = new ArrayList<>();
 
@@ -215,37 +231,93 @@ public class BusinessServiceImpl implements IBusinessService {
         return AjaxResult.success(OperateStatusMap.getOperateStatusMap().get(devName));
     }
 
-    // 获取组合面板的数据
-    @Override
+    // 获取组合面板的数据 @Override
     public AjaxResult getPanelData(String devName) {
-        LinkedHashMap<String, String> map = new LinkedHashMap<>();
-        int sysDotNum = getSysDotNum(devName);
-        // 通过readParam读取所需要的面板参数[先写死]
-        // 1.读取程序号
-        map.put("程序号", readSingleParam(devName, 15, 1, MbTranType.U16));
-        // 2.读取程序名
-        map.put("产品名称", readSingleParam(devName, 257, 10, MbTranType.U8A));
-        // 3.读取设备的参数
-        map.put("单位重量", readSingleParam(devName, 765, 1, MbTranType.U16));
-        // 4.读取目标值、上限值、下限值
-        String target = getDotStr(sysDotNum, readSingleParam(devName, 267, 2, MbTranType.S32));
-        String upper = getDotStr(sysDotNum, readSingleParam(devName, 269, 2, MbTranType.S32));
-        String lower = getDotStr(sysDotNum, readSingleParam(devName, 271, 2, MbTranType.S32));
-        map.put("目标值", target);
-        map.put("上限值", upper);
-        map.put("下限值", lower);
-        // 5.读取平均斗数、平均速度、实际速度
-        Integer avgNum = Integer.parseInt(readSingleParam(devName, 819, 1, MbTranType.U16));
-        map.put("平均斗数", String.format("%.1f", (avgNum >> 8) / 10.0));
-        map.put("设置速度", readSingleParam(devName, 273, 1, MbTranType.U16));
-        map.put("实际速度", readSingleParam(devName, 760, 1, MbTranType.U16));
-        // 6.获取秤的重量和重量单位 AFC等参数
-        map.put("weight", readSingleParam(devName, 817, 1, MbTranType.U16));
-        String unit = getUnit(readSingleParam(devName, 75, 1, MbTranType.U16));
-        map.put("sys_unit", unit);
-        String afc = getAFCStr(readSingleParam(devName, 303, 1, MbTranType.U16));
-        map.put("afc", afc);
+        LinkedHashMap<String, Object> map = new LinkedHashMap<>();
+
+        // 从Redis获取整数值
+        int sysDotNum = Integer.parseInt(getCacheObjectStr("sys_dot_num"));
+
+        // 读取所需要的面板参数并填充到map中
+        // 1、4、7
+        map.put("程序号", getCacheObject("sys_prm_ids"));
+        map.put("目标值", getDotStr(sysDotNum, getCacheObject("prm_SetWeight")));
+        map.put("平均斗数", getAverageNumber(readSingleParam(devName, 819, 1, MbTranType.U16)));
+
+        // 2、5、8
+        map.put("产品名称", getCacheObject("prm_name"));
+        map.put("上限值", getDotStr(sysDotNum, getCacheObject("prm_SetWeight1")));
+        map.put("设置速度", getCacheObject("prm_speed"));
+
+        // 3、6、9
+        map.put("单位重量", getCacheObject("sys_Unit"));
+        map.put("下限值", getDotStr(sysDotNum, getCacheObject("prm_SetWeight2")));
+        map.put("实际速度", getCacheObject("cmb_speed"));
+
+        // Remaining
+        map.put("weight", getCacheObject("cmb_weight"));
+        map.put("sys_unit", getUnit(getCacheObjectStr("sys_Unit")));
+        map.put("afc", getAFCStr(getCacheObjectStr("prm_AFC")));
+
         return AjaxResult.success(map);
+    }
+
+    private Object getCacheObject(String key) {
+        return redisCache.getCacheObject(KEY_PREFIX + key);
+    }
+
+    private String getCacheObjectStr(String key) {
+        if (getCacheObject(key) == null) {
+            return "";
+        } else {
+            return getCacheObject(key).toString();
+            
+        }
+    }
+
+    // 从Redis获取整数值，并处理可能的类型异常
+    private int getRedisIntValue(String key) {
+        Object obj = redisCache.getCacheObject(key);
+        if (obj instanceof Integer) {
+            return (Integer) obj;
+        }
+        return 0; // 或其他默认值
+    }
+
+    // 根据dotNum格式化String类型的数值: 比如value是11，dotNum是2，那么就是11.11
+    private String getDotStr(Integer dotNum, Object value) {
+        String res = value.toString();
+        if (dotNum > 0 && value != null) {
+            res = String.format("%." + dotNum + "f", Float.parseFloat(res));
+        }
+        return res;
+    }
+
+    // 根据系统单位值返回合适的单位
+    private String getUnit(String unit) {
+        /* 系统单位 */
+        switch (unit) {
+            case "0":
+                return "g";
+            case "1":
+                return "kg";
+            case "2":
+                return "lb";
+            case "3":
+                return "oz";
+            default:
+                return "g";
+        }
+    }
+
+    // 将avgNum转化为所需的平均数格式
+    private String getAverageNumber(String avgNumStr) {
+        try {
+            Integer avgNum = Integer.parseInt(avgNumStr);
+            return String.format("%.1f", (avgNum >> 8) / 10.0);
+        } catch (NumberFormatException e) {
+            return "0"; // 或其他默认值
+        }
     }
 
     // 获取斗状态数据
@@ -295,32 +367,6 @@ public class BusinessServiceImpl implements IBusinessService {
             dotNum = pv2.getParamValue() != null ? Integer.parseInt(pv2.getParamValue()) : 0;
         }
         return dotNum;
-    }
-
-    // 根据dotNum格式化String类型的数值: 比如value是11，dotNum是2，那么就是11.11
-    private String getDotStr(Integer dotNum, String value) {
-        String res = value;
-        if (dotNum > 0) {
-            res = String.format("%." + dotNum + "f", Float.parseFloat(value));
-        }
-        return res;
-    }
-
-    // 根据系统单位值返回合适的单位
-    private String getUnit(String unit) {
-        /* 系统单位 */
-        switch (unit) {
-            case "0":
-                return "g";
-            case "1":
-                return "kg";
-            case "2":
-                return "lb";
-            case "3":
-                return "oz";
-            default:
-                return "g";
-        }
     }
 
     // 格式化AFC参数

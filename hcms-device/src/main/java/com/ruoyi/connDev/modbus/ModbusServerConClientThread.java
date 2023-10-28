@@ -5,8 +5,12 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import com.ruoyi.base.domain.RegLib;
+import com.ruoyi.common.core.redis.RedisCache;
 import com.ruoyi.common.modbus.core.payloads.ReadHoldingRegisterPayLoad;
 import com.ruoyi.common.modbus.core.requests.ModBusTcpRequest;
 import com.ruoyi.common.modbus.core.requests.ModbusRequest;
@@ -52,6 +56,7 @@ public class ModbusServerConClientThread extends Thread {
   public void run() {
     boolean loop = true;
     try {
+      execRedisPartLogic(socket);
       // 获取输入和输出流
       InputStream in = socket.getInputStream();
       OutputStream out = socket.getOutputStream();
@@ -80,6 +85,22 @@ public class ModbusServerConClientThread extends Thread {
       } catch (Exception e1) {
         e1.printStackTrace();
       }
+    }
+  }
+
+  // 并行组件
+  private void execRedisPartLogic(Socket socket) {
+
+    try {
+
+      ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+
+      // 创建一个定时任务，延迟1秒后开始执行，每2秒执行一次
+      scheduler.scheduleAtFixedRate(new RedisReadTask(socket, regLibs), 0, 60, TimeUnit.SECONDS);
+      Thread.sleep(5000);
+
+    } catch (Exception e) {
+      e.printStackTrace();
     }
   }
 
