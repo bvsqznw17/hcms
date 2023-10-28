@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.base.mapper.RegLibMapper">
+    
+    <resultMap type="RegLib" id="RegLibResult">
+        <result property="id"    column="id"    />
+        <result property="devModel"    column="dev_model"    />
+        <result property="paramType"    column="param_type"    />
+        <result property="paramSubType"    column="param_sub_type"    />
+        <result property="paramKey"    column="param_key"    />
+        <result property="paramName"    column="param_name"    />
+        <result property="regAddr"    column="reg_addr"    />
+        <result property="regNum"    column="reg_num"    />
+        <result property="dataType"    column="data_type"    />
+        <result property="minV"    column="min_v"    />
+        <result property="maxV"    column="max_v"    />
+        <result property="decimalNum"    column="decimal_num"    />
+        <result property="unit"    column="unit"    />
+        <result property="operateType"    column="operate_type"    />
+        <result property="pageSeq"    column="page_seq"    />
+    </resultMap>
+
+    <sql id="selectRegLibVo">
+        select id, dev_model, param_type, param_sub_type,param_key, param_name, reg_addr, reg_num, data_type, min_v, max_v, decimal_num, unit, operate_type, page_seq from hcms_reg_lib
+    </sql>
+
+    <select id="selectRegLibList" parameterType="RegLib" resultMap="RegLibResult">
+        <include refid="selectRegLibVo"/>
+        <where>  
+            <if test="devModel != null "> and dev_model = #{devModel}</if>
+            <if test="paramType != null "> and param_type = #{paramType}</if>
+            <if test="paramSubType != null "> and param_sub_type = #{paramSubType}</if>
+            <if test="paramName != null  and paramName != ''"> and param_name like concat('%', #{paramName}, '%')</if>
+            <if test="operateType != null "> and operate_type = #{operateType}</if>
+        </where>
+        order by page_seq
+    </select>
+    
+    <select id="selectRegLibById" parameterType="Long" resultMap="RegLibResult">
+        <include refid="selectRegLibVo"/>
+        where id = #{id}
+    </select>
+        
+    <insert id="insertRegLib" parameterType="RegLib" useGeneratedKeys="true" keyProperty="id">
+        insert into hcms_reg_lib
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="devModel != null">dev_model,</if>
+            <if test="paramType != null">param_type,</if>
+            <if test="paramSubType != null">param_sub_type,</if>
+            <if test="paramKey != null and paramKey != ''">param_key,</if>
+            <if test="paramName != null and paramName != ''">param_name,</if>
+            <if test="regAddr != null">reg_addr,</if>
+            <if test="regNum != null">reg_num,</if>
+            <if test="dataType != null">data_type,</if>
+            <if test="minV != null">min_v,</if>
+            <if test="maxV != null">max_v,</if>
+            <if test="decimalNum != null">decimal_num,</if>
+            <if test="unit != null and unit != ''">unit,</if>
+            <if test="operateType != null">operate_type,</if>
+            <if test="pageSeq != null">page_seq,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="devModel != null">#{devModel},</if>
+            <if test="paramType != null">#{paramType},</if>
+            <if test="paramSubType != null">#{paramSubType},</if>
+            <if test="paramKey != null and paramKey != ''">#{paramKey},</if>
+            <if test="paramName != null and paramName != ''">#{paramName},</if>
+            <if test="regAddr != null">#{regAddr},</if>
+            <if test="regNum != null">#{regNum},</if>
+            <if test="dataType != null">#{dataType},</if>
+            <if test="minV != null">#{minV},</if>
+            <if test="maxV != null">#{maxV},</if>
+            <if test="decimalNum != null">#{decimalNum},</if>
+            <if test="unit != null and unit != ''">#{unit},</if>
+            <if test="operateType != null">#{operateType},</if>
+            <if test="pageSeq != null">#{pageSeq},</if>
+         </trim>
+    </insert>
+
+    <update id="updateRegLib" parameterType="RegLib">
+        update hcms_reg_lib
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="devModel != null">dev_model = #{devModel},</if>
+            <if test="paramType != null">param_type = #{paramType},</if>
+            <if test="paramSubType != null">param_sub_type = #{paramSubType},</if>
+            <if test="paramKey != null and paramKey != ''">param_key = #{paramKey},</if>
+            <if test="paramName != null and paramName != ''">param_name = #{paramName},</if>
+            <if test="regAddr != null">reg_addr = #{regAddr},</if>
+            <if test="regNum != null">reg_num = #{regNum},</if>
+            <if test="dataType != null">data_type = #{dataType},</if>
+            <if test="minV != null">min_v = #{minV},</if>
+            <if test="maxV != null">max_v = #{maxV},</if>
+            <if test="decimalNum != null">decimal_num = #{decimalNum},</if>
+            <if test="unit != null and unit != ''">unit = #{unit},</if>
+            <if test="operateType != null">operate_type = #{operateType},</if>
+            <if test="pageSeq != null">page_seq = #{pageSeq},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteRegLibById" parameterType="Long">
+        delete from hcms_reg_lib where id = #{id}
+    </delete>
+
+    <delete id="deleteRegLibByIds" parameterType="String">
+        delete from hcms_reg_lib where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>

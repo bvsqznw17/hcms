@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.device.mapper.DownloadListMapper">
+    
+    <resultMap type="DownloadList" id="DownloadListResult">
+        <result property="id"    column="id"    />
+        <result property="status"    column="status"    />
+        <result property="userid"    column="userId"    />
+        <result property="fileName"    column="file_name"    />
+        <result property="filePath"    column="file_path"    />
+        <result property="dtUpdate"    column="dt_update"    />
+    </resultMap>
+
+    <sql id="selectDownloadListVo">
+        select id, status, userId, file_name, file_path, dt_update from hcms_download_list
+    </sql>
+
+    <select id="selectDownloadListList" parameterType="DownloadList" resultMap="DownloadListResult">
+        <include refid="selectDownloadListVo"/>
+        <where>  
+            <if test="status != null "> and status = #{status}</if>
+            <if test="userid != null "> and userId = #{userid}</if>
+            <if test="fileName != null  and fileName != ''"> and file_name like concat('%', #{fileName}, '%')</if>
+            <if test="dtUpdate != null "> and dt_update &gt;= #{dtUpdate}</if>
+        </where>
+    </select>
+    
+    <select id="selectDownloadListById" parameterType="Long" resultMap="DownloadListResult">
+        <include refid="selectDownloadListVo"/>
+        where id = #{id}
+    </select>
+        
+    <insert id="insertDownloadList" parameterType="DownloadList" useGeneratedKeys="true" keyProperty="id">
+        insert into hcms_download_list
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="status != null">status,</if>
+            <if test="userid != null">userId,</if>
+            <if test="fileName != null">file_name,</if>
+            <if test="filePath != null">file_path,</if>
+            <if test="dtUpdate != null">dt_update,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="status != null">#{status},</if>
+            <if test="userid != null">#{userid},</if>
+            <if test="fileName != null">#{fileName},</if>
+            <if test="filePath != null">#{filePath},</if>
+            <if test="dtUpdate != null">#{dtUpdate},</if>
+         </trim>
+    </insert>
+
+    <update id="updateDownloadList" parameterType="DownloadList">
+        update hcms_download_list
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="status != null">status = #{status},</if>
+            <if test="userid != null">userId = #{userid},</if>
+            <if test="fileName != null">file_name = #{fileName},</if>
+            <if test="filePath != null">file_path = #{filePath},</if>
+            <if test="dtUpdate != null">dt_update = #{dtUpdate},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteDownloadListById" parameterType="Long">
+        delete from hcms_download_list where id = #{id}
+    </delete>
+
+    <delete id="deleteDownloadListByIds" parameterType="String">
+        delete from hcms_download_list where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>

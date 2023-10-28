@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.device.mapper.SysSettingsMapper">
+
+    <resultMap type="SysSettings" id="SysSettingsResult">
+        <result property="id" column="id" />
+        <result property="devName" column="dev_name" />
+        <result property="paramKey" column="param_key" />
+        <result property="paramValue" column="param_value" />
+        <result property="dtUpdate" column="dt_update" />
+    </resultMap>
+
+    <sql id="selectSysSettingsVo">
+        select id, dev_name, param_key, param_value, dt_update from hcms_sys_settings
+    </sql>
+
+    <select id="selectSysSettingsList" parameterType="SysSettings" resultMap="SysSettingsResult">
+        <include refid="selectSysSettingsVo"/>
+        <where>
+            <if test="devName != null  and devName != ''"> and dev_name like concat('%', #{devName}, '%')</if>
+            <if test="paramKey != null  and paramKey != ''"> and param_key = #{paramKey}</if>
+            <if test="paramValue != null  and paramValue != ''"> and param_value = #{paramValue}</if>
+            <if test="dtUpdate != null "> and dt_update = #{dtUpdate}</if>
+        </where>
+    </select>
+
+    <select id="selectSysSettingsById" parameterType="Long" resultMap="SysSettingsResult">
+        <include refid="selectSysSettingsVo"/>
+        where id = #{id}
+    </select>
+
+    <insert id="insertSysSettings" parameterType="SysSettings" useGeneratedKeys="true" keyProperty="id">
+        insert into hcms_sys_settings
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="devName != null">dev_name,</if>
+            <if test="paramKey != null">param_key,</if>
+            <if test="paramValue != null">param_value,</if>
+            <if test="dtUpdate != null">dt_update,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="devName != null">#{devName},</if>
+            <if test="paramKey != null">#{paramKey},</if>
+            <if test="paramValue != null">#{paramValue},</if>
+            <if test="dtUpdate != null">#{dtUpdate},</if>
+        </trim>
+    </insert>
+
+    <update id="updateSysSettings" parameterType="SysSettings">
+        update hcms_sys_settings
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="devName != null">dev_name = #{devName},</if>
+            <if test="paramKey != null">param_key = #{paramKey},</if>
+            <if test="paramValue != null">param_value = #{paramValue},</if>
+            <if test="dtUpdate != null">dt_update = #{dtUpdate},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteSysSettingsById" parameterType="Long">
+        delete from hcms_sys_settings where id = #{id}
+    </delete>
+
+    <delete id="deleteSysSettingsByIds" parameterType="String">
+        delete from hcms_sys_settings where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <!-- getSysSettingsByDevName -->
+    <select id="getSysSettingsByDevName" parameterType="String" resultMap="SysSettingsResult">
+        <include refid="selectSysSettingsVo"/>
+        where dev_name = #{devName}
+    </select>
+    <!-- getSysSettingsByDevNameAndParamKey -->
+    <select id="getSysSettingsByDevNameAndParamKey" parameterType="sysSettings" resultMap="SysSettingsResult">
+        <include refid="selectSysSettingsVo"/>
+        where dev_name = #{devName} and param_key = #{paramKey}
+    </select>
+</mapper>

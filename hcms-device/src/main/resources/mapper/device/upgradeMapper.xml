@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.device.mapper.upgradeMapper">
+    
+    <resultMap type="upgrade" id="upgradeResult">
+        <result property="id"    column="id"    />
+        <result property="ip"    column="ip"    />
+        <result property="name"    column="name"    />
+        <result property="devName"    column="dev_name"    />
+        <result property="version"    column="version"    />
+        <result property="newVersion"    column="new_version"    />
+        <result property="url"    column="url"    />
+        <result property="language"    column="language"    />
+        <result property="dtUpdate"    column="dt_update"    />
+    </resultMap>
+
+    <sql id="selectupgradeVo">
+        select id, ip, name, dev_name, version, new_version, language, url, dt_update from hcms_upgrade
+    </sql>
+
+    <select id="selectupgradeList" parameterType="upgrade" resultMap="upgradeResult">
+        <include refid="selectupgradeVo"/>
+        <where>  
+            <if test="ip != null  and ip != ''"> and ip like concat('%', #{ip}, '%')</if>
+            <if test="name != null  and name != ''"> and name like concat('%', #{name}, '%')</if>
+            <if test="language != null  and language != ''"> and language like concat('%', #{language}, '%')</if>
+            <if test="devName != null  and devName != ''"> and dev_name like concat('%', #{devName}, '%')</if>
+            <if test="version != null  and version != ''"> and version like concat('%', #{version}, '%')</if>
+            <if test="dtUpdate != null "> and dt_update = #{dtUpdate}</if>
+        </where>
+    </select>
+    
+    <select id="selectupgradeById" parameterType="Long" resultMap="upgradeResult">
+        <include refid="selectupgradeVo"/>
+        where id = #{id}
+    </select>
+        
+    <insert id="insertupgrade" parameterType="upgrade" useGeneratedKeys="true" keyProperty="id">
+        insert into hcms_upgrade
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="ip != null and ip != ''">ip,</if>
+            <if test="name != null and name != ''">name,</if>
+            <if test="devName != null and devName != ''">dev_name,</if>
+            <if test="version != null">version,</if>
+            <if test="newVersion != null">new_version,</if>
+            <if test="language != null">language,</if>
+            <if test="url != null">url,</if>
+            <if test="dtUpdate != null">dt_update,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="ip != null and ip != ''">#{ip},</if>
+            <if test="name != null and name != ''">#{name},</if>
+            <if test="devName != null and devName != ''">#{devName},</if>
+            <if test="version != null">#{version},</if>
+            <if test="newVersion != null">#{newVersion},</if>
+            <if test="language != null">#{language},</if>
+            <if test="url != null">#{url},</if>
+            <if test="dtUpdate != null">#{dtUpdate},</if>
+         </trim>
+    </insert>
+
+    <update id="updateupgrade" parameterType="upgrade">
+        update hcms_upgrade
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="ip != null and ip != ''">ip = #{ip},</if>
+            <if test="name != null and name != ''">name = #{name},</if>
+            <if test="devName != null and devName != ''">dev_name = #{devName},</if>
+            <if test="version != null">version = #{version},</if>
+            <if test="newVersion != null">new_version = #{newVersion},</if>
+            <if test="language != null">language = #{language},</if>
+            <if test="url != null">url = #{url},</if>
+            <if test="dtUpdate != null">dt_update = #{dtUpdate},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteupgradeById" parameterType="Long">
+        delete from hcms_upgrade where id = #{id}
+    </delete>
+
+    <delete id="deleteupgradeByDevName" parameterType="String">
+        delete from hcms_upgrade where devName = #{devName}
+    </delete>
+
+    <delete id="deleteupgradeByIds" parameterType="String">
+        delete from hcms_upgrade where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>

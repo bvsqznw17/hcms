@@ -1,0 +1,29 @@
+version: '3'
+services:
+  hcmsapi:
+    build: ./hcmsapi
+    image: hcmsapi:latest
+    ports:
+      - "19000:8080"
+      - "19003:11111"
+      - "502:502"
+      - "5020:5020"
+    volumes:
+      - /home/hcms/tmpFile/:/home/hcms/tmpFile
+      - /home/hcms/uploadPath:/home/hcms/uploadPath
+      - /home/hcms/appStoreFile:/home/hcms/appStoreFile
+      - /logs:/logs
+      - /home/hcms/api/logs:/usr/local/api/logs
+      - /home/hcms/api/conf:/usr/local/api/conf
+      - /home/hcms/api/cert:/usr/local/api/cert
+  hcms:
+    build: ./hcmsvue
+    image: hcms:latest
+    ports: 
+      - "19001:80"
+      # - "443:443"
+    volumes:
+      - ./hcmsvue/hcms-web/:/usr/share/nginx/html
+      - ./hcmsvue/nginx.conf:/etc/nginx/nginx.conf
+      - /home/hcms/cert:/etc/nginx/cert
+      - /home/hcms/nginx/logs:/var/log/nginx

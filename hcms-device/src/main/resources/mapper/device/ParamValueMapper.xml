@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.device.mapper.ParamValueMapper">
+
+    <resultMap type="ParamValue" id="ParamValueResult">
+        <result property="id" column="id" />
+        <result property="paramType" column="param_type" />
+        <result property="paramSubType" column="param_sub_type" />
+        <result property="paramKey" column="param_key" />
+        <result property="paramName" column="param_name" />
+        <result property="paramValue" column="param_value" />
+        <result property="devName" column="dev_name" />
+        <result property="devModel" column="dev_model" />
+        <result property="ip" column="ip" />
+        <result property="port" column="port" />
+        <result property="regAddr" column="reg_addr" />
+        <result property="dtUpdate" column="dt_update" />
+        <result property="pageSeq" column="page_seq" />
+        <result property="minV" column="min_v" />
+        <result property="maxV" column="max_v" />
+        <result property="decimalNum" column="decimal_num" />
+        <result property="decimalType" column="decimal_type" />
+        <result property="unit" column="unit" />
+    </resultMap>
+
+    <sql id="selectParamValueVo">
+        select id, dev_name, dev_model, param_type, param_sub_type,param_key, param_name, param_value, ip, port, reg_addr, dt_update from hcms_param_value
+    </sql>
+
+    <select id="selectParamValueList" parameterType="ParamValue" resultMap="ParamValueResult">
+        <!-- <include refid="selectParamValueVo"/> -->
+        select p.*, s.page_seq, s.min_v, s.max_v, s.decimal_num, s.decimal_type, s.unit 
+        from hcms_param_value p left join hcms_reg_lib s on p.param_key = s.param_key 
+        <where>
+            <if test="devName != null "> and p.dev_name = #{devName}</if>
+            <if test="devModel != null "> and p.dev_model = #{devModel}</if>
+            <if test="paramType != null "> and p.param_type = #{paramType}</if>
+            <if test="paramSubType != null "> and p.param_sub_type = #{paramSubType}</if>
+            <if test="paramName != null  and paramName != ''"> and p.param_name like concat('%', #{paramName}, '%')</if>
+            <if test="ip != null  and ip != ''"> and p.ip = #{ip}</if>
+            <if test="dtUpdate != null "> and p.dt_update = #{dtUpdate}</if>
+        </where>
+        order by p.param_sub_type, s.page_seq
+    </select>
+
+    <select id="selectParamValueById" parameterType="Long" resultMap="ParamValueResult">
+        <include refid="selectParamValueVo"/>
+        where id = #{id}
+    </select>
+
+    <insert id="insertParamValue" parameterType="ParamValue" useGeneratedKeys="true" keyProperty="id">
+        insert into hcms_param_value
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="paramType != null">param_type,</if>
+            <if test="paramSubType != null">param_sub_type,</if>
+            <if test="paramKey != null and paramKey != ''">param_key,</if>
+            <if test="paramName != null and paramName != ''">param_name,</if>
+            <if test="paramValue != null and paramValue != ''">param_value,</if>
+            <if test="devName != null and devName != ''">dev_name,</if>
+            <if test="devModel != null and devModel != ''">dev_model,</if>
+            <if test="ip != null and ip != ''">ip,</if>
+            <if test="port != null and port != ''">port,</if>
+            <if test="regAddr != null and regAddr != ''">reg_addr,</if>
+            <if test="dtUpdate != null">dt_update,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="paramType != null">#{paramType},</if>
+            <if test="paramSubType != null">#{paramSubType},</if>
+            <if test="paramKey != null and paramKey != ''">#{paramKey},</if>
+            <if test="paramName != null and paramName != ''">#{paramName},</if>
+            <if test="paramValue != null and paramValue != ''">#{paramValue},</if>
+            <if test="devName != null and devName != ''">#{devName},</if>
+            <if test="devModel != null and devModel != ''">#{devModel},</if>
+            <if test="ip != null and ip != ''">#{ip},</if>
+            <if test="port != null and port != ''">#{port},</if>
+            <if test="regAddr != null and regAddr != ''">#{regAddr},</if>
+            <if test="dtUpdate != null">#{dtUpdate},</if>
+        </trim>
+    </insert>
+
+    <update id="updateParamValue" parameterType="ParamValue">
+        update hcms_param_value
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="paramType != null">param_type = #{paramType},</if>
+            <if test="paramSubType != null">param_sub_type = #{paramSubType},</if>
+            <if test="paramKey != null and paramKey != ''">param_key = #{paramKey},</if>
+            <if test="paramName != null and paramName != ''">param_name = #{paramName},</if>
+            <if test="paramValue != null and paramValue != ''">param_value = #{paramValue},</if>
+            <if test="devName != null and devName != ''">dev_name = #{devName},</if>
+            <if test="devModel != null and devModel != ''">dev_model = #{devModel},</if>
+            <if test="ip != null and ip != ''">ip = #{ip},</if>
+            <if test="port != null and port != ''">port = #{port},</if>
+            <if test="regAddr != null and regAddr != ''">reg_addr = #{regAddr},</if>
+            <if test="dtUpdate != null">dt_update = #{dtUpdate},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteParamValueById" parameterType="Long">
+        delete from hcms_param_value where id = #{id}
+    </delete>
+
+    <delete id="deleteParamValueByDevName" parameterType="String">
+        delete from hcms_param_value where dev_name = #{devName}
+    </delete>
+
+    <delete id="deleteParamValueByIp" parameterType="String">
+        delete from hcms_param_value where ip = #{ip}
+    </delete>
+
+    <delete id="deleteParamValueByIds" parameterType="String">
+        delete from hcms_param_value where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <select id="getRegLibByRP" parameterType="ParamValue" resultType="RegLib">
+        select id, dev_model as devModel, param_type as paramType, param_key as paramKey, param_name as paramName, 
+        reg_addr as regAddr, reg_num as regNum, data_type as dataType, min_v as minV, max_v as maxV, decimal_num as decimalNum,
+        unit from hcms_reg_lib where reg_addr = #{regAddr} and param_name = #{paramName}
+    </select>
+
+    <!-- 根据regAddr获取RegLib -->
+    <select id="getRegLibByRegAddr" parameterType="String" resultType="RegLib">
+        select id, dev_model as devModel, param_type as paramType, param_key as paramKey, param_name as paramName, 
+        reg_addr as regAddr, reg_num as regNum, data_type as dataType, min_v as minV, max_v as maxV, decimal_num as decimalNum,
+        unit from hcms_reg_lib where reg_addr = #{regAddr}
+    </select>
+
+    <!-- 根据设备名称和regAddr获取参数值 -->
+    <select id="getParamValueByDevNameAndRegAddr" parameterType="String" resultMap="ParamValueResult">
+        <include refid="selectParamValueVo"/>
+        where dev_name = #{devName} and reg_addr = #{regAddr} limit 1
+    </select>
+
+    <!-- 根据设备名称和regAddr修改参数值 -->
+    <!-- <update id="updateParamValueByDevNameAndRegAddr" parameterType="String">
+
+    </update> -->
+
+    <!-- 根据地址区间获取参数值 -->
+    <select id="getParamValueByRegAddrRange" parameterType="String" resultMap="ParamValueResult">
+        <include refid="selectParamValueVo"/>
+        where reg_addr between #{startAddr} and #{endAddr}
+        and dev_name = #{devName}
+        and param_value is not null
+    </select>
+
+    <!-- getDotNumParamValueByDevName -->
+    <select id="getDotNumParamValueByDevName" parameterType="String" resultMap="ParamValueResult">
+        <include refid="selectParamValueVo"/>
+        where dev_name = #{devName} and param_key = 'sys_dot_num'
+    </select>
+
+    <!-- deleteMkParamValueByDevName -->
+    <delete id="deleteMkParamValueByDevName" parameterType="String">
+        delete from hcms_param_value where dev_name = #{devName} and param_key like '%mk%'
+    </delete>
+
+</mapper>

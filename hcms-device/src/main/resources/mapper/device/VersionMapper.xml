@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.device.mapper.VersionMapper">
+    
+    <resultMap type="Version" id="VersionResult">
+        <result property="id"    column="id"    />
+        <result property="type"    column="type"    />
+        <result property="name"    column="name"    />
+        <result property="version"    column="version"    />
+        <result property="url"    column="url"    />
+        <result property="dtUpdate"    column="dt_update"    />
+    </resultMap>
+
+    <sql id="selectVersionVo">
+        select id, type, name, version, url, dt_update from hcms_version
+    </sql>
+
+    <select id="selectVersionList" parameterType="Version" resultMap="VersionResult">
+        <include refid="selectVersionVo"/>
+        <where>  
+            <if test="name != null  and name != ''"> and name like concat('%', #{name}, '%')</if>
+            <if test="type != null  and type != ''"> and type = #{type}</if>
+            <if test="version != null  and version != ''"> and version = #{version}</if>
+            <if test="url != null  and url != ''"> and url = #{url}</if>
+            <if test="dtUpdate != null "> and dt_update = #{dtUpdate}</if>
+        </where>
+    </select>
+    
+    <select id="selectVersionById" parameterType="Long" resultMap="VersionResult">
+        <include refid="selectVersionVo"/>
+        where id = #{id}
+    </select>
+        
+    <insert id="insertVersion" parameterType="Version" useGeneratedKeys="true" keyProperty="id">
+        insert into hcms_version
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="type != null">type,</if>
+            <if test="name != null">name,</if>
+            <if test="language != null">language,</if>
+            <if test="version != null">version,</if>
+            <if test="url != null">url,</if>
+            <if test="dtUpdate != null">dt_update,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="type != null">#{type},</if>
+            <if test="name != null">#{name},</if>
+            <if test="language != null">#{language},</if>
+            <if test="version != null">#{version},</if>
+            <if test="url != null">#{url},</if>
+            <if test="dtUpdate != null">#{dtUpdate},</if>
+         </trim>
+    </insert>
+
+    <update id="updateVersion" parameterType="Version">
+        update hcms_version
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="type != null">type = #{type},</if>
+            <if test="name != null">name = #{name},</if>
+            <if test="language != null">language = #{language},</if>
+            <if test="version != null">version = #{version},</if>
+            <if test="url != null">url = #{url},</if>
+            <if test="dtUpdate != null">dt_update = #{dtUpdate},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteVersionById" parameterType="Long">
+        delete from hcms_version where id = #{id}
+    </delete>
+
+    <delete id="deleteVersionByIds" parameterType="String">
+        delete from hcms_version where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>

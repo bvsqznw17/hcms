@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.device.mapper.DevMsgMapper">
+
+	<resultMap type="DevMsg" id="DevMsgResult">
+		<result property="id" column="id" />
+		<result property="devName" column="dev_name" />
+		<result property="devModel" column="dev_model" />
+		<result property="ip" column="ip" />
+		<result property="port" column="port" />
+		<result property="area" column="area" />
+		<result property="status" column="status" />
+		<result property="dtCreate" column="dt_create" />
+		<result property="dtUpdate" column="dt_update" />
+		<result property="comment" column="comment" />
+		<result property="uuid" column="uuid" />
+		<result property="devCpusn" column="dev_cpusn" />
+		<result property="operateStatus" column="operate_status" />
+	</resultMap>
+
+
+	<sql id="selectDevMsgVo"> 
+		select id, dev_name, dev_model, uuid, ip, port, area, status, dt_create, dt_update, comment, dev_cpusn, operate_status 
+		from hcms_dev_msg 
+	</sql>
+
+	<select id="selectDevMsgList" parameterType="DevMsg" resultMap="DevMsgResult">
+		<include refid="selectDevMsgVo" />
+		<where>
+			<if test="devName != null  and devName != ''"> and dev_name like concat('%', #{devName}, '%') </if>
+			<if test="devCpusn != null  and devCpusn != ''"> and dev_cpusn like concat('%', #{devCpusn},'%') </if>
+			<if test="ip != null  and ip != ''"> and ip like concat('%', #{ip}, '%') </if>
+			<if test="port != null "> and port = #{port} </if>
+			<if test="status != null "> and status = #{status} </if>
+			<if test="dtUpdate != null "> and dt_update = #{dtUpdate} </if>
+			<if test="uuid != null "> and uuid = #{uuid} </if>
+			<if test="operateStatus != null "> and operate_status = #{operateStatus} </if>
+		</where> 
+		order by dt_update desc 
+	</select>
+
+
+	<select id="selectDevMsgById" parameterType="Long" resultMap="DevMsgResult">
+		<include refid="selectDevMsgVo" />
+		where id = #{id} 
+	</select>
+
+	<!-- selectDevMsgByName -->
+	<select id="selectDevMsgByName" parameterType="String" resultMap="DevMsgResult">
+		<include refid="selectDevMsgVo" />
+		where dev_name = #{devName} limit 1
+	</select>
+
+	<insert id="insertDevMsg" parameterType="DevMsg" useGeneratedKeys="true" keyProperty="id"> 
+    	insert into hcms_dev_msg 
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="devName != null"> dev_name, </if>
+			<if test="devModel != null"> dev_model, </if>
+			<if test="ip != null"> ip, </if>
+			<if test="port != null"> port, </if>
+			<if test="area != null"> area, </if>
+			<if test="status != null"> status, </if>
+			<if test="dtCreate != null"> dt_create, </if>
+			<if test="dtUpdate != null"> dt_update, </if>
+			<if test="comment != null"> comment, </if>
+			<if test="uuid != null"> uuid, </if>
+			<if test="devCpusn != null"> dev_cpusn, </if>
+			<if test="operateStatus != null"> operate_status, </if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="devName != null"> #{devName}, </if>
+			<if test="devModel != null"> #{devModel}, </if>
+			<if test="ip != null"> #{ip}, </if>
+			<if test="port != null"> #{port}, </if>
+			<if test="area != null"> #{area}, </if>
+			<if test="status != null"> #{status}, </if>
+			<if test="dtCreate != null"> #{dtCreate}, </if>
+			<if test="dtUpdate != null"> #{dtUpdate}, </if>
+			<if test="comment != null"> #{comment}, </if>
+			<if test="uuid != null"> #{uuid}, </if>
+			<if test="devCpusn != null"> #{devCpusn}, </if>
+			<if test="operateStatus != null"> #{operateStatus}, </if>
+		</trim>
+	</insert>
+
+	<update id="updateDevMsg" parameterType="DevMsg"> 
+    	update hcms_dev_msg 
+		<trim prefix="SET" suffixOverrides=",">
+			<if test="devName != null"> dev_name = #{devName}, </if>
+			<if test="devModel != null"> dev_model = #{devModel}, </if>
+			<if test="ip != null"> ip = #{ip}, </if>
+			<if test="port != null"> port = #{port}, </if>
+			<if test="area != null"> area = #{area}, </if>
+			<if test="status != null"> status = #{status}, </if>
+			<if test="dtCreate != null"> dt_create = #{dtCreate}, </if>
+			<if test="dtUpdate != null"> dt_update = #{dtUpdate}, </if>
+			<if test="comment != null"> comment = #{comment}, </if>
+			<if test="uuid != null"> uuid = #{uuid}, </if>
+			<if test="devCpusn != null"> dev_cpusn = #{devCpusn}, </if>
+			<if test="operateStatus != null"> operate_status = #{operateStatus}, </if>
+		</trim>
+		where id = #{id} 
+	</update>
+
+
+
+	<delete id="deleteDevMsgById" parameterType="Long">
+		delete from hcms_dev_msg where id = #{id} 
+	</delete>
+
+	<delete id="deleteDevMsgByIds" parameterType="String"> 
+		delete from hcms_dev_msg where id in 
+		<foreach item="id" collection="array" open="(" separator="," close=")"> #{id} </foreach>
+	</delete>
+
+	<!-- 将设备状态重置 -->
+	<update id="resetDevStatus" parameterType="String"> 
+		update hcms_dev_msg set status = 0 
+	</update>
+
+</mapper>

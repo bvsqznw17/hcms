@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.device.mapper.DevAuthMapper">
+
+    <resultMap type="DevAuth" id="DevAuthResult">
+        <result property="agentId" column="agent_id" />
+        <result property="devId" column="dev_id" />
+    </resultMap>
+
+    <select id="listAgentDevAuth" parameterType="String" resultMap="DevAuthResult">
+        SELECT * FROM hcms_agent_dev WHERE agent_id=#{agentId}
+    </select>
+
+    <select id="listAgentUser" parameterType="String" resultMap="DevAuthResult">
+        SELECT * FROM hcms_agent_user WHERE agent_id=#{agentId}
+    </select>
+
+    <select id="listUserDevAuth" parameterType="String" resultMap="DevAuthResult">
+        SELECT * FROM hcms_user_dev WHERE user_id=#{userId}
+    </select>
+
+    <insert id="saveDevAuth" parameterType="DevAuth">
+        INSERT INTO hcms_agent_dev (agent_id, dev_id) VALUES (#{agentId}, #{devId})
+    </insert>
+
+    <insert id="saveUserAuth" parameterType="DevAuth">
+        INSERT INTO hcms_user_dev (user_id, dev_id) VALUES (#{agentId}, #{devId})
+    </insert>
+
+    <delete id="deleteDevAuthByIds" parameterType="Long">
+        DELETE FROM hcms_agent_dev WHERE dev_id IN
+        <foreach item="devId" collection="array" open="(" separator="," close=")">
+            #{devId}
+        </foreach>
+    </delete>
+
+    <select id="checkDevAuthExist" parameterType="DevAuth" resultType="int">
+        SELECT COUNT(*) FROM hcms_agent_dev WHERE agent_id=#{agentId} AND dev_id=#{devId}
+    </select>
+
+    <!-- checkUserAuthExist -->
+    <select id="checkUserAuthExist" parameterType="DevAuth" resultType="int">
+        SELECT COUNT(*) FROM hcms_user_dev WHERE user_id=#{userId} AND dev_id=#{devId}
+    </select>
+
+    <delete id="deleteDevAuthByAgentIdAndDevId" parameterType="DevAuth">
+        DELETE FROM hcms_agent_dev WHERE agent_id=#{agentId} AND dev_id=#{devId}
+    </delete>
+
+    <!-- listAllTerminalUser -->
+    <select id="listAllTerminalUser" parameterType="String" resultMap="DevAuthResult">
+        SELECT * FROM hcms_agent_user
+    </select>
+
+    <!-- insertAgentUser -->
+    <insert id="insertAgentUser" parameterType="DevAuth">
+        INSERT INTO hcms_agent_user (agent_id, user_id) VALUES (#{agentId}, #{userId})
+    </insert>
+
+</mapper>

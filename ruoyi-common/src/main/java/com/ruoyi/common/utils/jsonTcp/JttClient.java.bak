@@ -1,0 +1,257 @@
+package com.ruoyi.common.utils.jsonTcp;
+
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;//导入DataInputStream类
+import java.io.DataOutputStream;//导入DataOutputStream
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;//导入IOException类
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.Socket;//导入Socket类
+import java.util.Scanner;//导入Scanner类
+import java.util.UUID;
+import java.util.concurrent.locks.ReentrantLock;
+
+import com.alibaba.fastjson2.JSONObject;
+import com.ruoyi.common.constant.JTcpFunc;
+import com.ruoyi.common.utils.sign.Md5Utils;
+
+public class JttClientBak {
+
+
+/**
+ * 注意用到的输入输出流DataInputStream和DataOutputStream，成对出现，最好用字节流
+ */
+// 客户端类
+public class JttClient {//创建公共类
+    private String host = "localhost";// 默认连接到本机
+    private int port = 8189;// 默认连接到端口8189
+    private String random = ""; //服务端发来的随机字符串
+    private String myRandom = UUID.randomUUID().toString().substring(0, 6); // 随机字符串
+    private String key = "sk#`~`#CBM5";
+    private File tranFile;
+    private ReentrantLock lock = new ReentrantLock();
+
+    public JttClient() {
+
+    }
+
+    // 连接到指定的主机和端口
+    public JttClient(String host, int port) {
+        this.host = host;
+        this.port = port;
+    }
+
+    // 连接到指定的主机和端口
+    public JttClient(String host, int port, File file) {
+        this.host = host;
+        this.port = port;
+        this.tranFile = file;
+    }
+
+    public boolean chat() {//chat方法
+        try {
+            // 连接到服务器
+            Socket socket = new Socket(host, port);//创建Socket类对象
+
+            try {
+
+                DataInputStream in = new DataInputStream(socket
+                        .getInputStream());// 读取服务器端传过来信息的DataInputStream
+
+                DataOutputStream out = new DataOutputStream(socket
+                        .getOutputStream());// 向服务器端发送信息的DataOutputStream
+
+                // InputStream in = socket.getInputStream();
+                // OutputStream out = socket.getOutputStream();
+
+                Scanner scanner = new Scanner(System.in);// 装饰标准输入流，用于从控制台输入
+
+                while (true) {
+                    String send = scanner.nextLine();//读取控制台输入的内容
+                    System.out.println("客户端：" + send);//输出键盘输出内容提示 ，也就是客户端向服务器端发送的消息
+                    // 把从控制台得到的信息传送给服务器
+                    out.writeUTF(send);// 将客户端的信息传递给服务器
+                    byte[] datas = new byte[2048];
+                    socket.getInputStream().read(datas);
+                    System.out.println(datas.length);
+                    System.out.println(new String(datas));// 输出来自服务器的信息
+                    String accpet = in.readUTF();// 读取来自服务器的信息
+                    System.out.println(accpet);// 输出来自服务器的信息
+                    out.writeUTF("123\0\0");
+                    // 1.如果是随机字符串
+                    if (accpet.indexOf("\0\0") != -1 && accpet.indexOf("\0\0") == accpet.indexOf('\0')) {
+                        random = accpet.substring(0, accpet.indexOf("\0"));
+                    }
+                    // 2.发送json请求
+                    if (!random.equals("")) {
+                        writeJsonReq(out);
+                    }
+                    // 3.接收json请求
+                    if (accpet.indexOf("\0\0") != -1 && accpet.indexOf("\0\0") != accpet.indexOf('\0')) {   // 如果是json字符串-检测是不是以\0-字符串-\0\0结尾
+                        System.out.println("接收到json请求");
+                        // 截取
+                        String joStr = accpet.substring(0, accpet.indexOf("\0"));
+                        String md5 = accpet.substring(accpet.indexOf("\0")+1, accpet.lastIndexOf("\0\0"));
+                        // 转换json，提取关键参数并校验
+                        JSONObject jo = JSONObject.parseObject(joStr);
+                        // 校验random
+                        String random = jo.getString("random");
+                        if (!random.equals(myRandom)) {
+                            writeJsonRespErr(out, -1, "random错误");
+                            return false;
+                        }
+                        // 校验md5
+                        String md5_ = Md5Utils.hash(joStr + key);
+                        if (md5.length() != 32 || !md5.toLowerCase().equals(md5_)) {
+                            writeJsonRespErr(out, -1, "MD5签名错误");
+                            return false;
+                        }
+                        // 校验json
+                        if (jo.isEmpty()) {
+                            writeJsonRespErr(out, -1, "JSON格式错误");
+                            return false;
+                        }
+                        // 检测fun
+                        String fun =  jo.getString("fun");
+                        if (!fun.equals(JTcpFunc.NET_UP)) {
+                            writeJsonRespErr(out, -1, "fun错误");
+                            return false;
+                        }
+                        // 4.如果error = 0，发送文件
+                        int error = jo.getIntValue("error");
+                        String message = jo.getString("message");
+                        if (message.equals("接收成功")) {
+                            return true;
+                        }
+                        System.out.println(message);
+                        if (error == 0) {
+                            lock.lock();
+                            sendFile(out, tranFile);
+                            lock.unlock();
+                        }
+                    }
+                }
+
+            } finally {
+                socket.close();//关闭Socket监听
+            }
+        } catch (Exception e) {//捕获异常
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    /**
+     * 截取json字符串
+     * @param out
+     * @throws IOException
+     */
+
+    /**
+     * 发送json请求
+     * @return
+     * @throws IOException
+     */
+    private void writeJsonReq(DataOutputStream out) throws IOException{
+        // 构建json请求
+        JSONObject jo = new JSONObject();
+        jo.put("fun", JTcpFunc.NET_UP);
+        jo.put("random", random);
+        jo.put("myRandom", myRandom);
+        jo.put("z_content", new JSONObject());
+        String joStr = jo.toString();
+        String md5 = Md5Utils.hash( joStr + key);
+        // md5 = HexUtil.encodeHexStr(md5);
+        String reqStr = joStr + "\0" + md5 + "\0\0";
+        out.writeUTF(reqStr);
+    }
+
+    /**
+     * 发送json回应
+     * @return
+     */
+    private void writeJsonResp(){
+
+    }
+
+
+    /**
+     * 生成文件md5
+     * @param args
+     */
+    private String makeFileMd5(){
+        String md5 = "";
+
+        return md5;
+    }
+
+     /**
+      * 发送文件
+      * @param args
+      */
+      private void sendFile(DataOutputStream out, File file) throws Exception{
+        FileInputStream fis = new FileInputStream(file);
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        String fileName = file.getName();
+        // 文件名字节数
+        int fnSize = fileName.getBytes().length;
+        os.write(fnSize);
+        // 文件名
+        os.write(fileName.getBytes());
+        // 文件内容字节数
+        int filesize = (int) (file.length());
+        os.write(filesize);
+        // 文件内容
+        byte[] fileContent = new byte[fis.available()];
+        fis.read(fileContent);
+        os.write(fileContent);
+        // 检验和
+        String ck = Md5Utils.hash(fileName + fileContent.toString() + random + key);
+        // 检验和字节数
+        int ckSize = 16;
+        os.write(ckSize);
+        os.write(ck.getBytes());
+        byte[] upFile = os.toByteArray();
+        out.write(upFile);
+      }
+
+      /**
+       * writeJsonRespErr
+       * @param args
+     * @throws IOException
+       */
+      private void writeJsonRespErr(DataOutputStream out, int code, String msg) throws IOException{
+        JSONObject jo = new JSONObject();
+        jo.put("fun", "net_up");
+        jo.put("error", code);
+        jo.put("message", "errormsg");
+        jo.put("random", random);
+        jo.put("myRandom", myRandom);
+        jo.put("z_content", new JSONObject());
+        out.writeUTF(jo.toString());
+      }
+
+      /**
+       * 
+       * @param args
+       */
+
+
+    public static void main(String[] args) {//主程序方法
+        File file = new File("D:/home/hcms/tmpFile/docker部署方案.md");
+        // new JttClient("localhost", 8189, file).chat();//调用chat方法
+        new JttClient("192.168.1.111", 5020, file).chat();//调用chat方法
+        // String random = "123\0\0";
+        // System.out.println(random);
+    }
+
+    // @Override
+    // public void run() {
+    //     chat();
+    // }
+}
+
+
+}

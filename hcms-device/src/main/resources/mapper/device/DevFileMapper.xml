@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.device.mapper.DevFileMapper">
+    
+    <resultMap type="DevFile" id="DevFileResult">
+        <result property="id"    column="id"    />
+        <result property="devModel"    column="dev_model"    />
+        <result property="devName"    column="dev_name"    />
+        <result property="businessType"    column="business_type"    />
+        <result property="fileType"    column="file_type"    />
+        <result property="fileName"    column="file_name"    />
+        <result property="filePath"    column="file_path"    />
+        <result property="uploadTime"    column="upload_time"    />
+        <result property="exParam"    column="ex_param"    />
+        <result property="perm"    column="perm"    />
+    </resultMap>
+
+    <sql id="selectDevFileVo">
+        select id, dev_model, dev_name, business_type, file_type, file_name, file_path,upload_time, ex_param, perm from hcms_dev_file
+    </sql>
+
+    <select id="selectDevFileList" parameterType="DevFile" resultMap="DevFileResult">
+        <include refid="selectDevFileVo"/>
+        <where>  
+            <if test="devName != null  and devName != ''"> and dev_name like concat('%', #{devName}, '%')</if>
+            <if test="devModel != null  and devModel != ''"> and dev_model like concat('%', #{devModel}, '%')</if>
+            <if test="businessType != null  and businessType != ''"> and business_type = #{businessType}</if>
+            <if test="fileType != null  and fileType != ''"> and file_type = #{fileType}</if>
+            <if test="fileName != null  and fileName != ''"> and file_name like concat('%', #{fileName}, '%')</if>
+            <if test="filePath != null  and filePath != ''"> and file_path like concat('%', #{filePath}, '%')</if>
+            <if test="uploadTime != null  and uploadTime != ''"> and upload_time &gt; #{uploadTime}</if>
+        </where>
+        order by upload_time
+    </select>
+
+    <select id="selectDevFilePageList" parameterType="DevFile" resultMap="DevFileResult">
+        <include refid="selectDevFileVo"/>
+        <where>  
+            <if test="devName != null  and devName != ''"> and dev_name like concat('%', #{devName}, '%')</if>
+            <if test="devModel != null  and devModel != ''"> and dev_model like concat('%', #{devModel}, '%')</if>
+            <if test="businessType != null  and businessType != ''"> and business_type = #{businessType}</if>
+            <if test="fileType != null  and fileType != ''"> and file_type = #{fileType}</if>
+            <if test="fileName != null  and fileName != ''"> and file_name like concat('%', #{fileName}, '%')</if>
+            <if test="filePath != null  and filePath != ''"> and file_path = #{filePath}</if>
+            <if test="uploadTime != null  and uploadTime != ''"> and upload_time &gt; #{uploadTime}</if>
+            and business_type in('firmware','licence_file','factory_param','config_file')
+        </where>
+        order by upload_time
+    </select>
+    
+    <select id="selectDevFileById" parameterType="Long" resultMap="DevFileResult">
+        <include refid="selectDevFileVo"/>
+        where id = #{id}
+    </select>
+        
+    <insert id="insertDevFile" parameterType="DevFile" useGeneratedKeys="true" keyProperty="id">
+        insert into hcms_dev_file
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="devName != null">dev_name,</if>
+            <if test="devModel != null">dev_model,</if>
+            <if test="businessType != null">business_type,</if>
+            <if test="fileType != null">file_type,</if>
+            <if test="fileName != null">file_name,</if>
+            <if test="filePath != null">file_path,</if>
+            <if test="uploadTime != null">upload_time,</if>
+            <if test="exParam != null">ex_param,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="devName != null">#{devName},</if>
+            <if test="devModel != null">#{devModel},</if>
+            <if test="businessType != null">#{businessType},</if>
+            <if test="fileType != null">#{fileType},</if>
+            <if test="fileName != null">#{fileName},</if>
+            <if test="filePath != null">#{filePath},</if>
+            <if test="uploadTime != null">#{uploadTime},</if>
+            <if test="exParam != null">#{exParam},</if>
+         </trim>
+    </insert>
+
+    <update id="updateDevFile" parameterType="DevFile">
+        update hcms_dev_file
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="devName != null">dev_name = #{devName},</if>
+            <if test="devModel != null">dev_model = #{devModel},</if>
+            <if test="businessType != null">business_type = #{businessType},</if>
+            <if test="fileType != null">file_type = #{fileType},</if>
+            <if test="fileName != null">file_name = #{fileName},</if>
+            <if test="filePath != null">file_path = #{filePath},</if>
+            <if test="uploadTime != null">upload_time = #{uploadTime},</if>
+            <if test="exParam != null">ex_param = #{exParam},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteDevFileById" parameterType="Long">
+        delete from hcms_dev_file where id = #{id}
+    </delete>
+
+    <delete id="deleteDevFileByIds" parameterType="String">
+        delete from hcms_dev_file where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+    
+    <select id="selectDevFileBydevName" parameterType="String" resultMap="DevFileResult">
+        <include refid="selectDevFileVo"/>
+        where dev_name = #{devName}
+        order by upload_time
+    </select>
+    
+     <select id="getDevFileByKey" parameterType="DevFile" resultMap="DevFileResult">
+        <include refid="selectDevFileVo"/>
+        <where>
+	        <if test="devName != null  and devName != ''"> and dev_name = #{devName}</if>
+	        <if test="params.keyWords != null">
+	        	and 
+	        	(dev_name like concat('%', #{params.keyWords}, '%')
+	        	or file_name like concat('%', #{params.keyWords}, '%')
+	        	or file_path like concat('%', #{params.keyWords}, '%')
+	        	)
+	        </if>
+        </where>
+        order by upload_time
+    </select>
+    
+    <select id="selectDevFileByIds" parameterType="String" resultMap="DevFileResult">
+        select * from hcms_dev_file where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </select>
+</mapper>

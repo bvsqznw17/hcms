@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.device.mapper.DevListMapper">
+    
+    <resultMap type="DevList" id="DevListResult">
+        <result property="id"    column="id"    />
+        <result property="name"    column="name"    />
+        <result property="ip"    column="ip"    />
+        <result property="port"    column="port"    />
+        <result property="area"    column="area"    />
+        <result property="status"    column="status"    />
+        <result property="dtCreate"    column="dt_create"    />
+        <result property="dtUpdate"    column="dt_update"    />
+        <result property="comment"    column="comment"    />
+    </resultMap>
+
+    <sql id="selectDevListVo">
+        select id, name, ip, port, area, status, dt_create, dt_update, comment from hcms_dev_list
+    </sql>
+
+    <select id="selectDevListList" parameterType="DevList" resultMap="DevListResult">
+        <include refid="selectDevListVo"/>
+        <where>
+            <if test="name != null  and name != ''"> and name like concat('%', #{name}, '%')</if>
+            <if test="ip != null  and ip != ''"> and ip like concat('%',#{ip})</if>
+            <if test="port != null "> and port = #{port}</if>
+            <if test="area != null  and area != ''"> and area = #{area}</if>
+            <if test="status != null "> and status = #{status}</if>
+            <if test="dtCreate != null "> and dt_create &gt;= #{dtCreate}</if>
+            <if test="dtUpdate != null "> and dt_update &gt;= #{dtUpdate}</if>
+        </where>
+        order by status desc
+    </select>
+    
+    <select id="selectDevListById" parameterType="Long" resultMap="DevListResult">
+        <include refid="selectDevListVo"/>
+        where id = #{id}
+    </select>
+        
+    <insert id="insertDevList" parameterType="DevList" useGeneratedKeys="true" keyProperty="id">
+        insert into hcms_dev_list
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="name != null">name,</if>
+            <if test="ip != null">ip,</if>
+            <if test="port != null">port,</if>
+            <if test="area != null">area,</if>
+            <if test="status != null">status,</if>
+            <if test="dtCreate != null">dt_create,</if>
+            <if test="dtUpdate != null">dt_update,</if>
+            <if test="comment != null">comment,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="name != null">#{name},</if>
+            <if test="ip != null">#{ip},</if>
+            <if test="port != null">#{port},</if>
+            <if test="area != null">#{area},</if>
+            <if test="status != null">#{status},</if>
+            <if test="dtCreate != null">#{dtCreate},</if>
+            <if test="dtUpdate != null">#{dtUpdate},</if>
+            <if test="comment != null">#{comment},</if>
+         </trim>
+    </insert>
+
+    <update id="updateDevList" parameterType="DevList">
+        update hcms_dev_list
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="name != null">name = #{name},</if>
+            <if test="ip != null">ip = #{ip},</if>
+            <if test="port != null">port = #{port},</if>
+            <if test="area != null">area = #{area},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="dtCreate != null">dt_create = #{dtCreate},</if>
+            <if test="dtUpdate != null">dt_update = #{dtUpdate},</if>
+            <if test="comment != null">comment = #{comment},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteDevListById" parameterType="Long">
+        delete from hcms_dev_list where id = #{id}
+    </delete>
+
+    <delete id="deleteDevListByIds" parameterType="String">
+        delete from hcms_dev_list where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>
